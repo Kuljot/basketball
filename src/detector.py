@@ -2,8 +2,9 @@ import os
 import cv2
 import time
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from ultralytics import YOLO
+from src.utils import *
 from src.ball import Ball
 from src.hoop import Hoop
 from src.person import Person
@@ -27,21 +28,14 @@ class Detector:
         self.font=cv2.FONT_HERSHEY_SIMPLEX
         self.lineType=cv2.LINE_AA
         self.score=Score()
-        #self.tracker=Tracker()
+        self.side='left' #or 'right'
         self.wait=1 #ms
-        self.max_cosine_distance=0.9     #max cosine distance for similarity
+        self.max_cosine_distance=0.99     #max cosine distance for similarity
         self.nn_budget=None
         self.nms_max_overlap=0.8         #discard multiple bounding boxes
         self.model_filename='models/mars-small128.pb' #Model to be used in the encoder
-        self.class_names={0:'Ball', 1:'Hoop', 2:'Person'}
-
-
-    def cropper(self,frame,x1,y1,x2,y2):
-        img=cv2.imread(frame)
-        return img[x1:x2,y1:y2]
-    
-    def convert_boxes(self,x1,y1,x2,y2):
-        return [x1,y1,np.absolute(x2-x1),np.absolute(y2-y1)]
+        self.class_names={0:'Ball', 1:'Hoop', 2:'Person'}    
+        self.BALL_COLOR=(0,0,255)
 
     def detect(self,video_path: os.path=None):
         
@@ -49,12 +43,12 @@ class Detector:
         cap = cv2.VideoCapture(video_path)
         ret, frame = cap.read()
         H, W, _ = frame.shape
-        img=frame
+        self.score.frame_width=W
         
         #Encoder to convert the image into vector
         encoder=gdet.create_box_encoder(self.model_filename,batch_size=1)
         metric=nn_matching.NearestNeighborDistanceMetric('cosine',self.max_cosine_distance,self.nn_budget)
-        tracker=Tracker(metric)
+        tracker=Tracker(metric,self.max_cosine_distance)
         #out = cv2.VideoWriter(video_path_out, cv2.VideoWriter_fourcc(*'MP4V'), int(cap.get(cv2.CAP_PROP_FPS)), (W, H))
 
         while ret:
@@ -63,8 +57,8 @@ class Detector:
             results=self.model(frame)
 
             #Function to count the score
-            self.score.detect_score(self.ball.x1,self.ball.y1,self.ball.x2,self.ball.y2,
-                    self.hoop.x1,self.hoop.y1,self.hoop.x2,self.hoop.y2)
+            
+            
             #self.ball.x1_tracked,self.ball.y1_tracked,self.ball.x2_tracked, self.ball.y2_tracked=self.tracker.predict(self.wait)
             #Black box over the ball
             # cv2.rectangle(frame, (int(self.ball.x1), int(self.ball.y1)), (int(self.ball.x2), int(self.ball.y2)), (0, 0, 0), 4)
@@ -87,22 +81,23 @@ class Detector:
                         self.ball.x2=x2
                         self.ball.y1=y1
                         self.ball.y2=y2
+                        self.score.detect_score(self.ball.x1,self.ball.y1,self.ball.x2,self.ball.y2,
+                            self.hoop.x1,self.hoop.y1,self.hoop.x2,self.hoop.y2)
                         #self.tracker.update(x1,y1,x2,y2)
                     if class_id==1: #Hoop
                         self.hoop.x1=x1
                         self.hoop.x2=x2
                         self.hoop.y1=y1
                         self.hoop.y2=y2
+                        self.score.set_side(self.hoop.x1,self.hoop.x2)
 
                     names.append(self.class_names[int(class_id)])
-                    converted_boxes.append(self.convert_boxes(x1,y1,x2,y2))
+                    converted_boxes.append(utils.convert_boxes(x1,y1,x2,y2))
                     scores.append(cls_score)
 
-                features=encoder(img,converted_boxes)
+                features=encoder(frame,converted_boxes)
                 names=np.array(names)
 
-                # detections = [Detection(bbox, score, class_name, feature) for bbox, score, class_name, feature in
-                #   zip(converted_boxes, scores, names, features)]
                 detections = [Detection(bbox, score, feature) for bbox, score, feature in
                   zip(converted_boxes, scores, features)]
 
@@ -117,75 +112,32 @@ class Detector:
                 tracker.predict()
                 tracker.update(detections)
 
-                cmap = plt.get_cmap('tab20b')
-                colors = [cmap(i)[:3] for i in np.linspace(0,1,20)]
-
                 for track in tracker.tracks:
-                    print("************")
-                    print(track.to_tlbr())
-                    #print(track.features)
-                    print("*****----------********")
+                    # print("************")
+                    # print(track.to_tlbr())
+                    # #print(track.features)
+                    # print("*****----------********")
                     if not track.is_confirmed() or track.time_since_update >1:
                         continue
                     bbox = track.to_tlbr()
-                    # class_name= track.get_class()
-                    color = colors[int(track.track_id) % len(colors)]
-                    color = [i * 255 for i in color]
+                
+                    #Score Write
+                    cv2.putText(frame,str(self.score.lcount), (300,150), self.font, 5,(0, 0, 255),3,self.lineType)
+                    cv2.putText(frame,str(self.score.rcount), (1000,150), self.font, 5,(0, 0, 255),3,self.lineType)
 
-                    cv2.rectangle(frame, (int(bbox[0]),int(bbox[1])), (int(bbox[2]),int(bbox[3])),color, 4)
-                    # cv2.rectangle(img, (int(bbox[0]), int(bbox[1]-30)), (int(bbox[0])+(len(class_name)
-                    #             +len(str(track.track_id)))*17, int(bbox[1])), color, -1)
-                    cv2.putText(frame, str(track.track_id), (int(bbox[0]), int(bbox[1]-10)), 0, 0.75,
-                                (255, 255, 255), 2)
+                    if class_id==0: #Ball          
+                        cv2.rectangle(frame, (int(bbox[0]),int(bbox[1])), (int(bbox[2]),int(bbox[3])),self.BALL_COLOR, 4)
+                    elif class_id==1: #Hoop
+                        cv2.rectangle(frame, (int(bbox[0]),int(bbox[1])), (int(bbox[2]),int(bbox[3])),utils.hoop_color(self.ball,self.hoop), 4)
+                    elif class_id==2: #Person
+                        cv2.rectangle(frame, (int(bbox[0]),int(bbox[1])), (int(bbox[2]),int(bbox[3])),utils.average_color(frame,int(bbox[0]),int(bbox[1]),int(bbox[2]),int(bbox[3])), 4)
+                        cv2.putText(frame, str(track.track_id), (int(bbox[0]), int(bbox[1]-10)), 0, 0.75,
+                                                (255, 255, 255), 2)
+                    
+
 
             cv2.imshow('frame',frame)
             cv2.waitKey(self.wait)
             ret, frame = cap.read()
         cap.release()
         cv2.destroyAllWindows()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# for r in result.boxes.data.tolist():
-                #     x1,y1,x2,y2,cls_score,class_id=r
-                #     #features=encoder(img,[x1,y1,x2-x1,y2-y1])
-                    #Location update for ball and hoop
-                    # if class_id==0: #Ball
-                    #     self.ball.x1=x1
-                    #     self.ball.x2=x2
-                    #     self.ball.y1=y1
-                    #     self.ball.y2=y2
-                    #     #self.tracker.update(x1,y1,x2,y2)
-                    # if class_id==1: #Hoop
-                    #     self.hoop.x1=x1
-                    #     self.hoop.x2=x2
-                    #     self.hoop.y1=y1
-                    #     self.hoop.y2=y2
-
-                    # if cls_score > self.threshold:
-                    #     cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 4)
-                    #     cv2.putText(
-                    #                 frame, 
-                    #                 result.names[int(class_id)].upper(),
-                    #                 (int(x1), int(y1 - 10)),
-                    #                 self.font,
-                    #                 1.3,
-                    #                 (0, 255, 0),
-                    #                 3,
-                    #                 self.lineType
-                    #                 )
-                    #     cv2.putText(frame,str(self.score.count), (300,150), self.font, 5,(0, 0, 255),3,self.lineType)
-                    #     cv2.putText(frame,str(self.score.reset), (1000,150), self.font, 5,(0, 0, 255),3,self.lineType)
-                    #     cv2.putText(frame,str(num_persons), (300,600), self.font, 5,(0, 0, 255),3,self.lineType)
-                #out.write(frame)
