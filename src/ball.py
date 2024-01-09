@@ -4,10 +4,19 @@ class Ball:
         self.y1=y1
         self.x2=x2
         self.y2=y2
+        self.queue=[]
+        self.max_queue_len=3
 
-        self.x1_tracked=x1
-        self.y1_tracked=y1
-        self.x2_tracked=x2
-        self.y2_tracked=y2
+    def center(self):
+        center_x=int((self.x1+self.x2)/2)
+        center_y=int((self.y1+self.y2)/2)
+        return center_x,center_y
+
+    def update(self):
+        x,y=self.center()
+        if len(self.queue)>self.max_queue_len:
+            self.queue.pop(0)
+        self.queue.append([x,y])
+
 
     
