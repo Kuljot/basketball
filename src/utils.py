@@ -22,7 +22,7 @@ class utils:
         if ball_x1>hoop_x1 and ball_x2<hoop_x2 and ball_y1>hoop_y1 and ball_y2<hoop_y2:
             color = (0,255,0)
         else:
-            color = (255,0,0)
+            color = (255,255,255)
         return color
 
     def convert_boxes(x1,y1,x2,y2):
