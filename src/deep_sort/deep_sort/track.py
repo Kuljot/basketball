@@ -64,7 +64,7 @@ class Track:
     """
 
     def __init__(self, mean, covariance, track_id, n_init, max_age,
-                 feature=None, class_id=None):
+                 feature=None, class_id=None, confidence=None):
         self.mean = mean
         self.covariance = covariance
         self.track_id = track_id
@@ -74,7 +74,8 @@ class Track:
 
         self.state = TrackState.Tentative
         self.features = []
-        self.class_id = class_id #Added class id 
+        self.class_id = class_id #Added class id
+        self.confidence= confidence
         if feature is not None:
             self.features.append(feature)
 

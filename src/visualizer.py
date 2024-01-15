@@ -17,7 +17,7 @@ from src.deep_sort.tools import generate_detections as gdet
 from streamlit_webrtc import webrtc_streamer
 
 class Visualizer:
-    def __init__(self,model_path: os.path,threshold: float=0.5):
+    def __init__(self,model_path: os.path,threshold: float=0.2):
         self.ball= Ball()
         self.hoop= Hoop()
         self.model_path=model_path

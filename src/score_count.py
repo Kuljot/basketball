@@ -18,20 +18,55 @@ class Score():
             self.side='right'
         else:
             self.side='left'
+    # def center_inside(self,ball_x1,ball_y1,ball_x2,ball_y2,
+    #                 hoop_x1,hoop_y1,hoop_x2,hoop_y2):
+
+    def correct_order(self,x1,x2):
+
+        min_=np.minimum(x1,x2)
+        max_=np.maximum(x1,x2)
+        return min_,max_
+        
+
     
     def detect_score(self,ball_x1,ball_y1,ball_x2,ball_y2,
                     hoop_x1,hoop_y1,hoop_x2,hoop_y2):
+        
+        ball_x1,ball_x2=self.correct_order(ball_x1,ball_x2)
+        ball_y1,ball_y2=self.correct_order(ball_y1,ball_y2)
+        hoop_x1,hoop_x2=self.correct_order(hoop_x1,hoop_x2)
+        hoop_y1,hoop_y2=self.correct_order(hoop_y1,hoop_y2)
 
         self.set_max_hoop_height(hoop_y1,hoop_y2)
         
-        if ball_x1>hoop_x1 and ball_x2<hoop_x2:
-            if ball_y1>hoop_y1 and ball_y2<hoop_y2:
-                if (self.reset != 1):
-                    if self.side=='right':
-                        self.rcount+=1 
-                    else:
-                        self.lcount+=1
-                    self.reset=1
+        # if ball_x1>hoop_x1 and ball_x2<hoop_x2:
+        #     if ball_y1>hoop_y1 and ball_y2<hoop_y2:
+        #         if (self.reset != 1):
+        #             if self.side=='right':
+        #                 self.rcount+=1 
+        #             else:
+        #                 self.lcount+=1
+        #             self.reset=1
 
-        if np.minimum(int(ball_y1),int(ball_y2))>(np.maximum(int(hoop_y1),int(hoop_y2))+2*self.max_hoop_height):
-                self.reset=0
+        # if np.minimum(int(ball_y1),int(ball_y2))>(np.maximum(int(hoop_y1),int(hoop_y2))+2*self.max_hoop_height):
+        #         self.reset=0
+
+        center_x=int((ball_x1+ball_x2)/2.0)
+        center_y=int((ball_y1+ball_y2)/2.0)
+
+        hoop_mid_y=int((hoop_y1+hoop_y2)/2.0)
+        
+        if center_x>hoop_x1 and center_x<hoop_x2:
+            if center_y<hoop_mid_y and center_y>(hoop_mid_y-1.5*self.max_hoop_height):
+                self.reset=2
+            elif center_y>hoop_mid_y and center_y<(hoop_mid_y+1.5*self.max_hoop_height) and self.reset==2:
+                if self.side=='right':
+                    self.rcount+=1 
+                    self.reset=0
+                else:
+                    self.lcount+=1
+                    self.reset=0
+            else:
+                self.reset=3
+        else: 
+            self.reset=4
