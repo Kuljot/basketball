@@ -135,7 +135,7 @@ python convert.py  path_to_video_file  path_to_the_yolo_model_file
 
 ## Dataset Used:
 https://universe.roboflow.com/ownprojects/basketball-w2xcw/dataset/2/images
-
+Model file is not shared due to size.
 ## License
 CC
 **OpenSource!**
