@@ -38,7 +38,7 @@ The program uses a number of open source libraries to work :
 - [OpenCV](https://opencv.org/) - For drawing rectangles on the video
 
 
-And CSVtoML itself is open source with a [https://github.com/Kuljot/csv_hypertuner][dill] on GitHub. Built as an educational project. Please treat it for educational purpose only, PLEASE DONT UPLOAD ANY SENSITIVE/PERSONAL INFO.
+And it is open source project with a [https://github.com/Kuljot/basketball] on GitHub. Built as an educational project. Please treat it for educational purpose only, PLEASE DONT UPLOAD ANY SENSITIVE/PERSONAL INFO.
 
 ## Installation on your local Machine
 
