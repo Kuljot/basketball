@@ -1,7 +1,8 @@
 # Basketball Detector
 ## Basketball score detection using YOLOV8 X DeepSort
+![image](https://github.com/Kuljot/basketball/assets/33811204/462b2c93-c65d-4b23-ae30-0d0c4b73cc3e)
+![image](https://github.com/Kuljot/basketball/assets/33811204/38c564bd-530c-4b8e-9efb-29ebf31f81f5)
 
-[![N|YOLOV8](https://assets-global.website-files.com/6479eab6eb2ed5e597810e9e/65342ba375a1412e2f259dcc_LinkedIn_Product_Page_YOLOv8-p-800.png)](https://assets-global.website-files.com/6479eab6eb2ed5e597810e9e/65342ba375a1412e2f259dcc_LinkedIn_Product_Page_YOLOv8-p-800.png)
 
 Basketball score lets you count the score and detect Players, Ball and the Hoop(Rim) from any video,
 The container can be deployed on any PC in the network and used from the streamlit web-app for real time detection.
